@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>for Samaira</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Poppins:wght@200;300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#07030f;
+    --deep:#150826;
+    --deep2:#1f0f38;
+    --star:#f5f0ff;
+    --core:#8b5cf6;
+    --glow:#c084fc;
+    --glow-soft:rgba(192,132,252,0.35);
+    --muted:#b9aed4;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--void);
+    color:var(--star);
+    font-family:'Poppins',sans-serif;
+    overflow-x:hidden;
+  }
+  canvas#bg{
+    position:fixed;
+    top:0;left:0;
+    width:100vw;height:100vh;
+    z-index:0;
+    display:block;
+  }
+  .vignette{
+    position:fixed;inset:0;
+    z-index:1;
+    pointer-events:none;
+    background:radial-gradient(ellipse at center, transparent 40%, rgba(7,3,15,0.85) 100%);
+  }
+  main{position:relative;z-index:2;}
+
+  /* ---------- HERO ---------- */
+  .hero{
+    height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:0 24px;
+  }
+  .hero .eyebrow{
+    font-size:12px;
+    letter-spacing:4px;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin-bottom:22px;
+    opacity:0;
+    animation:fadeUp 1.4s ease forwards 0.3s;
+  }
+  .hero h1{
+    font-family:'Cormorant Garamond',serif;
+    font-weight:500;
+    font-size:clamp(48px, 9vw, 108px);
+    line-height:1.02;
+    background:linear-gradient(180deg, #ffffff, var(--glow) 140%);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+    opacity:0;
+    animation:fadeUp 1.6s ease forwards 0.7s;
+  }
+  .hero p{
+    margin-top:20px;
+    font-weight:300;
+    font-size:clamp(14px,2vw,17px);
+    color:var(--muted);
+    max-width:480px;
+    opacity:0;
+    animation:fadeUp 1.6s ease forwards 1.2s;
+  }
+  .scrollcue{
+    position:absolute;
+    bottom:40px;
+    font-size:11px;
+    letter-spacing:3px;
+    color:var(--muted);
+    text-transform:uppercase;
+    opacity:0;
+    animation:fadeUp 1.4s ease forwards 2s, bob 2.4s ease-in-out infinite 3.4s;
+  }
+  @keyframes fadeUp{
+    from{opacity:0; transform:translateY(18px);}
+    to{opacity:1; transform:translateY(0);}
+  }
+  @keyframes bob{
+    0%,100%{transform:translateY(0);}
+    50%{transform:translateY(8px);}
+  }
+
+  /* ---------- CONSTELLATION GUIDE (fixed heart svg) ---------- */
+  .heart-guide{
+    position:fixed;
+    top:50%; left:50%;
+    transform:translate(-50%,-50%);
+    width:min(80vw, 640px);
+    height:min(80vw, 640px);
+    z-index:3;
+    pointer-events:none;
+    opacity:0;
+    transition:opacity 0.6s ease;
+  }
+  .heart-guide.visible{opacity:1;}
+  .heart-outline{
+    fill:none;
+    stroke:var(--glow);
+    stroke-width:1.4;
+    stroke-linecap:round;
+    filter:drop-shadow(0 0 6px var(--glow-soft));
+  }
+  .heart-fill{
+    opacity:0;
+    transition:opacity 1.4s ease;
+  }
+  .heart-fill.complete{opacity:1;}
+  .node{
+    fill:var(--star);
+    filter:drop-shadow(0 0 4px var(--star));
+    opacity:0.25;
+    transition:opacity .5s ease, fill .5s ease, filter .5s ease;
+  }
+  .node.active{
+    fill:var(--glow);
+    opacity:1;
+    filter:drop-shadow(0 0 10px var(--glow));
+  }
+
+  /* ---------- MEMORY SECTIONS ---------- */
+  .memory{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:80px 24px;
+  }
+  .memory-inner{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    max-width:900px;
+    width:100%;
+    opacity:0.15;
+    transform:translateY(30px) scale(0.94);
+    transition:opacity 0.9s ease, transform 0.9s ease;
+  }
+  .memory.in-view .memory-inner{
+    opacity:1;
+    transform:translateY(0) scale(1);
+  }
+
+  .frame{
+    flex-shrink:0;
+    width:min(62vw, 420px);
+    height:min(62vw, 420px);
+    border-radius:50%;
+    position:relative;
+    background:radial-gradient(circle, var(--deep2), var(--deep));
+    box-shadow:
+      0 0 0 1px rgba(192,132,252,0.55),
+      0 0 40px 6px var(--glow-soft),
+      0 0 90px rgba(139,92,246,0.25),
+      0 20px 70px rgba(0,0,0,0.55);
+    overflow:hidden;
+  }
+  .frame img{
+    width:100%; height:100%;
+    object-fit:cover;
+    object-position:center;
+    display:block;
+  }
+  .frame .ph-label{
+    position:absolute; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    text-align:center;
+    font-size:12px;
+    color:var(--muted);
+    letter-spacing:1px;
+    padding:20px;
+  }
+
+  /* ---------- FINALE ---------- */
+  .finale{
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:60px 24px 160px;
+    position:relative;
+  }
+  .letter-wrap{
+    width:100%;
+    max-width:560px;
+    margin-bottom:44px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    opacity:0;
+    transform:scale(0.8);
+    transition:opacity 1.2s ease, transform 1.2s ease;
+  }
+  .finale.in-view .letter-wrap{ opacity:1; transform:scale(1); }
+
+  .heart-trigger{
+    background:none;
+    border:none;
+    cursor:pointer;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:14px;
+    padding:14px;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .heart-icon{
+    width:64px; height:60px;
+    transition:transform 0.5s cubic-bezier(.34,1.56,.64,1);
+    filter:drop-shadow(0 0 10px var(--glow-soft));
+  }
+  .heart-icon path{
+    fill:var(--core);
+    transition:fill 0.4s ease, filter 0.4s ease;
+  }
+  .heart-trigger:hover .heart-icon{ transform:scale(1.08); }
+  .heart-trigger.grown .heart-icon path{
+    fill:var(--glow);
+    filter:drop-shadow(0 0 16px var(--glow));
+  }
+  .heart-trigger.done .heart-icon{
+    animation:heartbeat 1.6s ease-in-out infinite;
+  }
+  @keyframes heartbeat{
+    0%,100%{ transform:scale(1.36); }
+    50%{ transform:scale(1.46); }
+  }
+  .tap-hint{
+    font-size:12px;
+    letter-spacing:2.5px;
+    text-transform:uppercase;
+    color:var(--muted);
+    opacity:0.85;
+    transition:opacity 0.4s ease;
+  }
+
+  .paper{
+    width:100%;
+    margin-top:8px;
+    padding:0 8px;
+    perspective:900px;
+  }
+  .fold{
+    max-height:0;
+    overflow:hidden;
+    transition:max-height 0.8s cubic-bezier(.65,0,.35,1);
+  }
+  .fold.open{ max-height:220px; }
+  .fold p{
+    transform-origin:top center;
+    transform:rotateX(-95deg);
+    opacity:0;
+    transition:transform 0.7s ease 0.05s, opacity 0.5s ease 0.05s;
+    font-family:'Cormorant Garamond',serif;
+    font-style:italic;
+    font-size:clamp(17px,2.6vw,21px);
+    line-height:1.55;
+    color:var(--star);
+    background:linear-gradient(180deg, rgba(31,15,56,0.55), rgba(21,8,38,0.35));
+    border-top:1px solid rgba(192,132,252,0.25);
+    padding:18px 22px;
+    margin:0;
+  }
+  .fold.open p{ transform:rotateX(0deg); opacity:1; }
+  .fold .kissy{ text-align:center; }
+  .fold .sign{
+    display:block;
+    margin-top:10px;
+    font-family:'Poppins',sans-serif;
+    font-style:normal;
+    font-size:12px;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    color:var(--muted);
+  }
+
+  .finale h2{
+    font-family:'Cormorant Garamond',serif;
+    font-style:italic;
+    font-weight:500;
+    font-size:clamp(30px,5vw,52px);
+    max-width:640px;
+    line-height:1.35;
+    opacity:0;
+    transform:translateY(20px);
+    transition:opacity 1.2s ease 0.3s, transform 1.2s ease 0.3s;
+  }
+  .finale.in-view h2{ opacity:1; transform:translateY(0); }
+  .finale .sign{
+    margin-top:26px;
+    font-size:14px;
+    letter-spacing:2px;
+    color:var(--muted);
+    text-transform:uppercase;
+    opacity:0;
+    transition:opacity 1.2s ease 0.9s;
+  }
+  .finale.in-view .sign{ opacity:1; }
+
+  @media (max-width:720px){
+    .frame{ width:78vw; height:78vw; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation:none !important; transition:none !important; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="bg"></canvas>
+<div class="vignette"></div>
+
+<!-- Heart guide overlay: fixed, builds up as user scrolls through memories -->
+<svg class="heart-guide" id="heartGuide" viewBox="0 0 100 100">
+  <defs>
+    <radialGradient id="heartGrad" cx="50%" cy="45%" r="60%">
+      <stop offset="0%" stop-color="#c084fc" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#6d28d9" stop-opacity="0.55"/>
+    </radialGradient>
+  </defs>
+  <path class="heart-fill" id="heartFill" fill="url(#heartGrad)"
+    d="M50,32 C46,20 32,14 20,22 C8,30 8,46 20,58 C28,66 40,76 50,86 C60,76 72,66 80,58 C92,46 92,30 80,22 C68,14 54,20 50,32 Z" />
+  <path class="heart-outline" id="heartPath"
+    d="M50,32 C46,20 32,14 20,22 C8,30 8,46 20,58 C28,66 40,76 50,86 C60,76 72,66 80,58 C92,46 92,30 80,22 C68,14 54,20 50,32 Z"
+    pathLength="100" />
+  <!-- 8 nodes placed along the heart curve, roughly evenly spaced -->
+  <circle class="node" data-node="1" cx="20" cy="22" r="1.6"></circle>
+  <circle class="node" data-node="2" cx="10" cy="36" r="1.6"></circle>
+  <circle class="node" data-node="3" cx="20" cy="55" r="1.6"></circle>
+  <circle class="node" data-node="4" cx="38" cy="70" r="1.6"></circle>
+  <circle class="node" data-node="5" cx="50" cy="86" r="1.6"></circle>
+  <circle class="node" data-node="6" cx="63" cy="70" r="1.6"></circle>
+  <circle class="node" data-node="7" cx="80" cy="55" r="1.6"></circle>
+  <circle class="node" data-node="8" cx="90" cy="36" r="1.6"></circle>
+</svg>
+
+<main>
+
+  <section class="hero">
+    <span class="eyebrow">a small universe, for you</span>
+    <h1>for Samaira</h1>
+    <p>Every star up there is a memory. Scroll, and let's put them back together — one by one, until they make the shape they were always meant to make.</p>
+    <span class="scrollcue">scroll ↓</span>
+  </section>
+
+  <!-- ===================== MEMORY SECTIONS =====================
+       Replace the src="photos/1.jpg" paths with your real photos.
+       Edit the <p> text in each block to your own memories.
+       Keep data-node values 1–8, one section per node, in order.
+  ============================================================== -->
+
+  <section class="memory" data-node="1">
+    <div class="memory-inner">
+      <div class="frame">
+        <img src="photos/1.jpg" alt="memory one" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+        <div class="ph-label" style="display:none;">photo 1<br>(replace photos/1.jpg)</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="memory" data-node="2">
+    <div class="memory-inner">
+      <div class="frame">
+        <img src="photos/2.jpg" alt="memory two" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+        <div class="ph-label" style="display:none;">photo 2<br>(replace photos/2.jpg)</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="memory" data-node="3">
+    <div class="memory-inner">
+      <div class="frame">
+        <img src="photos/3.jpg" alt="memory three" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+        <div class="ph-label" style="display:none;">photo 3<br>(replace photos/3.jpg)</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="memory" data-node="4">
+    <div class="memory-inner">
+      <div class="frame">
+        <img src="photos/4.jpg" alt="memory four" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+        <div class="ph-label" style="display:none;">photo 4<br>(replace photos/4.jpg)</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="memory" data-node="5">
+    <div class="memory-inner">
+      <div class="frame">
+        <img src="photos/5.jpg" alt="memory five" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+        <div class="ph-label" style="display:none;">photo 5<br>(replace photos/5.jpg)</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="memory" data-node="6">
+    <div class="memory-inner">
+      <div class="frame">
+        <img src="photos/6.jpg" alt="memory six" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+        <div class="ph-label" style="display:none;">photo 6<br>(replace photos/6.jpg)</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="memory" data-node="7">
+    <div class="memory-inner">
+      <div class="frame">
+        <img src="photos/7.jpg" alt="memory seven" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+        <div class="ph-label" style="display:none;">photo 7<br>(replace photos/7.jpg)</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="memory" data-node="8">
+    <div class="memory-inner">
+      <div class="frame">
+        <img src="photos/8.jpg" alt="memory eight" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+        <div class="ph-label" style="display:none;">photo 8<br>(replace photos/8.jpg)</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="finale">
+    <div class="letter-wrap">
+      <button class="heart-trigger" id="heartTrigger" aria-label="tap to open the letter">
+        <svg class="heart-icon" id="heartIcon" viewBox="0 0 32 29" xmlns="http://www.w3.org/2000/svg">
+          <path d="M16 28C16 28 2 19.4 2 9.7C2 4.8 5.9 1 10.6 1C13.4 1 15.4 2.4 16 4.1C16.6 2.4 18.6 1 21.4 1C26.1 1 30 4.8 30 9.7C30 19.4 16 28 16 28Z"/>
+        </svg>
+        <span class="tap-hint" id="tapHint">tap the heart</span>
+      </button>
+
+      <div class="paper" id="paper">
+        <div class="fold" data-i="1"><p>Sam, I really love you. Ik we get less time because of work or whatever, but tu meri hai.</p></div>
+        <div class="fold" data-i="2"><p>I SMILE LIKE A BABY WITH YOU, and my heart sank when I saw u crying — tabse I'm trynna make this.</p></div>
+        <div class="fold" data-i="3"><p>"Jindal" — 1, "Oberoi" — 0. But I manifest ki its always "Aaryamann and Samaira" — 1, and "all odds" — 0.</p></div>
+        <div class="fold" data-i="4"><p>Dar mat, tu sher hai, faad degi. Aur kuch ho toh, I'm here, right?</p></div>
+        <div class="fold" data-i="5"><p>Can't wait to hug you. Can't wait to kiss you. Can't wait to fucking get freaky with you.</p></div>
+        <div class="fold" data-i="6"><p>Spiderman mat dekhio pls, saath dekhenge.</p></div>
+        <div class="fold" data-i="7"><p>And I wanna say I love you, milke.</p></div>
+        <div class="fold" data-i="8"><p class="kissy">Also baby... kissy 💋<span class="sign">— Aaryamann</span></p></div>
+      </div>
+    </div>
+    <h2>Eight stars, one shape. It was always going to spell out you.<br>I love you, Samaira.</h2>
+    <span class="sign">— always yours</span>
+  </section>
+
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/* ============ AMBIENT 3D STARFIELD (Three.js) ============ */
+(function(){
+  const canvas = document.getElementById('bg');
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
+  camera.position.z = 5;
+
+  const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+
+  // Star field
+  const STAR_COUNT = 1400;
+  const positions = new Float32Array(STAR_COUNT*3);
+  const sizes = new Float32Array(STAR_COUNT);
+  for(let i=0;i<STAR_COUNT;i++){
+    const r = 40 * Math.pow(Math.random(), 0.5);
+    const theta = Math.random()*Math.PI*2;
+    const phi = Math.acos((Math.random()*2)-1);
+    positions[i*3]   = r*Math.sin(phi)*Math.cos(theta);
+    positions[i*3+1] = r*Math.sin(phi)*Math.sin(theta);
+    positions[i*3+2] = r*Math.cos(phi) - 10;
+    sizes[i] = Math.random()*1.6 + 0.3;
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(positions,3));
+  geo.setAttribute('size', new THREE.BufferAttribute(sizes,1));
+
+  const mat = new THREE.PointsMaterial({
+    color: 0xe9defe,
+    size: 0.09,
+    transparent:true,
+    opacity:0.85,
+    sizeAttenuation:true
+  });
+  const stars = new THREE.Points(geo, mat);
+  scene.add(stars);
+
+  // subtle purple haze particles closer to camera
+  const HAZE_COUNT = 120;
+  const hazePos = new Float32Array(HAZE_COUNT*3);
+  for(let i=0;i<HAZE_COUNT;i++){
+    hazePos[i*3]   = (Math.random()-0.5)*20;
+    hazePos[i*3+1] = (Math.random()-0.5)*20;
+    hazePos[i*3+2] = Math.random()*-15;
+  }
+  const hazeGeo = new THREE.BufferGeometry();
+  hazeGeo.setAttribute('position', new THREE.BufferAttribute(hazePos,3));
+  const hazeMat = new THREE.PointsMaterial({color:0xa78bfa, size:0.22, transparent:true, opacity:0.35});
+  const haze = new THREE.Points(hazeGeo, hazeMat);
+  scene.add(haze);
+
+  let mouseX=0, mouseY=0;
+  window.addEventListener('mousemove', (e)=>{
+    mouseX = (e.clientX/window.innerWidth - 0.5);
+    mouseY = (e.clientY/window.innerHeight - 0.5);
+  });
+
+  let scrollFrac = 0;
+  window.addEventListener('scroll', ()=>{
+    const h = document.documentElement.scrollHeight - window.innerHeight;
+    scrollFrac = h>0 ? window.scrollY/h : 0;
+  });
+
+  function animate(){
+    requestAnimationFrame(animate);
+    stars.rotation.y += 0.00025;
+    stars.rotation.x = scrollFrac * 0.3;
+    haze.rotation.y -= 0.0004;
+
+    camera.position.x += (mouseX*1.2 - camera.position.x) * 0.02;
+    camera.position.y += (-mouseY*1.2 - camera.position.y) * 0.02;
+    camera.lookAt(0,0,-10);
+
+    renderer.render(scene, camera);
+  }
+  animate();
+
+  window.addEventListener('resize', ()=>{
+    camera.aspect = window.innerWidth/window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+})();
+
+/* ============ HEART GUIDE: builds progressively as memories scroll into view ============ */
+(function(){
+  const guide = document.getElementById('heartGuide');
+  const path = document.getElementById('heartPath');
+  const fill = document.getElementById('heartFill');
+  const len = path.getTotalLength ? path.getTotalLength() : 100;
+  path.style.strokeDasharray = 100;
+  path.style.strokeDashoffset = 100;
+
+  const memories = document.querySelectorAll('.memory');
+  const finale = document.querySelector('.finale');
+  const nodes = document.querySelectorAll('.node');
+  let joined = 0;
+
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+      const el = entry.target;
+      if(entry.isIntersecting){
+        el.classList.add('in-view');
+        guide.classList.add('visible');
+        const n = el.dataset.node;
+        if(n){
+          const node = document.querySelector('.node[data-node="'+n+'"]');
+          if(node && !node.classList.contains('active')){
+            node.classList.add('active');
+            joined++;
+            const revealAmount = 100 - (100 * (joined/8));
+            path.style.transition = 'stroke-dashoffset 1.1s ease';
+            path.style.strokeDashoffset = Math.max(revealAmount, 0);
+          }
+        }
+      } else {
+        el.classList.remove('in-view');
+      }
+    });
+  }, {threshold:0.45});
+
+  memories.forEach(m=>io.observe(m));
+  io.observe(finale);
+
+  const finaleIO = new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+      if(entry.isIntersecting){
+        finale.classList.add('in-view');
+        path.style.strokeDashoffset = 0;
+        fill.classList.add('complete');
+        guide.style.transition = 'opacity 0.8s ease, transform 1.4s ease';
+        guide.classList.remove('visible');
+      } else {
+        finale.classList.remove('in-view');
+      }
+    });
+  }, {threshold:0.5});
+  finaleIO.observe(finale);
+
+  // gentle heartbeat pulse once complete
+  let pulseStarted = false;
+  const pulseObserver = new MutationObserver(()=>{
+    if(fill.classList.contains('complete') && !pulseStarted){
+      pulseStarted = true;
+      let t=0;
+      function pulse(){
+        t += 0.04;
+        const scale = 1 + Math.sin(t)*0.02;
+        guide.style.transform = 'translate(-50%,-50%) scale(' + scale + ')';
+        requestAnimationFrame(pulse);
+      }
+      pulse();
+    }
+  });
+  pulseObserver.observe(fill, {attributes:true});
+})();
+
+/* ============ FINALE: tap-the-heart folding letter ============ */
+(function(){
+  const trigger = document.getElementById('heartTrigger');
+  const icon = document.getElementById('heartIcon');
+  const hint = document.getElementById('tapHint');
+  const paper = document.getElementById('paper');
+  if(!trigger || !paper) return;
+  const folds = Array.from(paper.querySelectorAll('.fold'));
+  const total = folds.length;
+  let count = 0;
+
+  const hints = [
+    'tap the heart',
+    'keep tapping',
+    'a little more',
+    'almost there',
+    "don't stop now",
+    'so close',
+    'one more',
+    'last one',
+    'tap to read again'
+  ];
+
+  trigger.addEventListener('click', ()=>{
+    if(count < total){
+      icon.style.transform = 'scale(' + (1 + count*0.045) + ')';
+      trigger.classList.add('grown');
+      folds[count].classList.add('open');
+      count++;
+      hint.textContent = hints[count] || hints[hints.length-1];
+      if(count === total){
+        trigger.classList.add('done');
+      }
+    } else {
+      folds.forEach(f=>f.classList.remove('open'));
+      trigger.classList.remove('grown','done');
+      icon.style.transform = 'scale(1)';
+      count = 0;
+      hint.textContent = hints[0];
+    }
+  });
+})();
+</script>
+
+</body>
+</html>
